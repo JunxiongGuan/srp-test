@@ -39,9 +39,8 @@ test_disconnect_repeatedly() {
     kill $pid
     wait
     [ -z "$nvme" ] && log_in ""
-    if [ ! -n "$debug" ]; then
-       unmount_and_check "$m" || return $?
-    fi
+    [ "$fio_status" = 0 ] || return "$fio_status"
+    unmount_and_check "$m" || return $?
     return $fio_status
 }
 
