@@ -54,7 +54,7 @@ count_luns() {
 wait_for_luns() {
     local i luns
 
-    use_blk_mq y y
+    use_blk_mq y y || return $?
     for ((i=0;i<100;i++)); do
 	luns=$(count_luns)
         [ "$luns" -ge ${#vdev_path[@]} ] && break

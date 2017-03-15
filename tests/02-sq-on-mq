@@ -23,7 +23,7 @@ test_disconnect_repeatedly() {
     local dev fio_status m pid
 
     echo "Test file I/O on top of multipath concurrently with logout and login ($((runtime / 60)) min; sq-on-mq)"
-    use_blk_mq n y
+    use_blk_mq n y || return $?
     dev=$(get_bdev 0) || return $?
     m=${mountpoint[0]}
     unmount_and_check "$m" || return $?
