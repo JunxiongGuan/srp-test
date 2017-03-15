@@ -278,17 +278,18 @@ dev_to_mpath() {
 }
 
 remove_mpath_dev() {
-    local dm i output
+    local cmd dm i output
 
     dm=$(dev_to_mpath "$1")
     dmsetup message "$dm" 0 fail_if_no_path
     for ((i=10;i>0;i--)); do
 	if [ ! -e "/dev/mapper/$dm" ] ||
-	       output=$(dmsetup remove "$dm" 2>&1); then
+	       cmd="dmsetup remove $dm"
+	       output=$(eval "$cmd" 2>&1); then
 	    echo "done"
 	    break
 	fi
-	echo "$output; retrying"
+	echo "$cmd: $output; retrying"
 	stop_bdev_users "$(readlink -f "/dev/mapper/$dm")"
 	sleep .1
     done
