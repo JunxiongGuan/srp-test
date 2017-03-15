@@ -280,7 +280,7 @@ dev_to_mpath() {
 remove_mpath_dev() {
     local cmd dm i output
 
-    dm=$(dev_to_mpath "$1")
+    dm=$(dev_to_mpath "$1") || return $?
     dmsetup message "$dm" 0 fail_if_no_path
     for ((i=10;i>0;i--)); do
 	if [ ! -e "/dev/mapper/$dm" ] ||
@@ -336,7 +336,6 @@ remove_srp_mpath_devs() {
 	    echo -n "removing $mpdev: "
 	    remove_mpath_dev "$mpdev" || [ -z "$debug" ] || return 1
 	done
-    return 0
 }
 
 remove_nvme_mpath_devs() {
