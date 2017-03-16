@@ -74,6 +74,12 @@ use_blk_mq() {
     log_in "$login_params"
 }
 
+# The ib_srp-backport driver supports the enable_imm_data kernel module
+# parameter but the upstream SRP initiator not.
+srp_initiator_supports_rdma_cm() {
+    [ -e /sys/module/ib_srp/parameters/enable_imm_data ]
+}
+
 get_ipv4_addr() {
     ip -4 -o addr show dev "$1" |
 	sed -n 's/.*[[:blank:]]inet[[:blank:]]*\([^[:blank:]/]*\).*/\1/p'
@@ -104,18 +110,20 @@ srp_log_in() {
 	done
     done
 
-    for d in /sys/class/net/*; do
-	[ -e "$d" ] || continue
-	for p in /sys/class/infiniband_srp/*; do
-	    [ -e "$p" ] || continue
-	    a=$(get_ipv4_addr "$(basename "$d")")
-	    [ -n "$a" ] || continue
-	    dest="${a}:${srp_rdma_cm_port}"
-	    {
-		echo "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" >"$p/add_target"
-	    } 2>/dev/null
+    if srp_initiator_supports_rdma_cm; then
+	for d in /sys/class/net/*; do
+	    [ -e "$d" ] || continue
+	    for p in /sys/class/infiniband_srp/*; do
+		[ -e "$p" ] || continue
+		a=$(get_ipv4_addr "$(basename "$d")")
+		[ -n "$a" ] || continue
+		dest="${a}:${srp_rdma_cm_port}"
+		{
+		    echo "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" >"$p/add_target"
+		} 2>/dev/null
+	    done
 	done
-    done
+    fi
 }
 
 # Tell the SRP initiator driver to log out.
