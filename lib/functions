@@ -224,8 +224,9 @@ held_by() {
 }
 
 simulate_network_failure_loop() {
-    local d
+    local d s
 
+    s=5
     while :; do
 	sleep 5
 	if [ -n "$nvme" ]; then
@@ -234,7 +235,8 @@ simulate_network_failure_loop() {
 	    done
 	else
 	    log_out
-	    sleep 5
+	    sleep $s
+	    s=$((((s + 5) & 0xff) ^ 0xa6))
 	    log_in ""
 	fi
     done
