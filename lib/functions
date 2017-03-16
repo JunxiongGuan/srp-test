@@ -36,6 +36,7 @@ target_framework=lio
 nvme_subsysnqn="nvme-test"
 nvme_port=7777
 runtime=600
+srp_rdma_cm_port=5555
 tests=()
 
 usage() {
@@ -109,7 +110,7 @@ srp_log_in() {
 	    [ -e "$p" ] || continue
 	    a=$(get_ipv4_addr "$(basename "$d")")
 	    [ -n "$a" ] || continue
-	    dest="${a}:5555"
+	    dest="${a}:${srp_rdma_cm_port}"
 	    {
 		echo "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" >"$p/add_target"
 	    } 2>/dev/null
@@ -706,7 +707,7 @@ start_scst_srpt() {
     hca=($(all_primary_gids))
 
     modprobe scst_vdisk || return $?
-    insmod "/lib/modules/$(uname -r)/extra/ib_srpt.ko" srp_max_req_size=4200 rdma_cm_port=5555 dyndbg=+pmf || return $?
+    insmod "/lib/modules/$(uname -r)/extra/ib_srpt.ko" srp_max_req_size=4200 rdma_cm_port=${srp_rdma_cm_port} dyndbg=+pmf || return $?
     for r in "${vdev_path[@]}"; do
 	if [ -b "$r" ]; then
 	    oflag=oflag=direct
