@@ -20,7 +20,7 @@
 . "$(dirname "$0")/../lib/functions"
 
 test_disconnect_repeatedly() {
-    local dev fio_status m pid
+    local dev fio_status m
 
     echo "Test file I/O on top of multipath concurrently with logout and login ($((runtime / 60)) min; mq)"
     use_blk_mq y y || return $?
@@ -29,14 +29,12 @@ test_disconnect_repeatedly() {
     unmount_and_check "$m" || return $?
     create_filesystem "$dev" || return $?
     mount_and_check "$dev" "$m" || return $?
-    simulate_network_failure_loop "$dev" &
-    pid=$!
+    simulate_network_failure_loop "$dev" "$runtime" &
     run_fio --verify=md5 -rw=randwrite --bs=4K --loops=$((10**6)) \
 	--iodepth=64 --group_reporting --sync=1 --direct=1 --ioengine=libaio \
 	--directory="$m" --name=data-integrity-test-mq --thread --numjobs=16 \
 	--runtime="${runtime}" --output=fio-output-02-mq.txt >/dev/null
     fio_status=$?
-    kill $pid
     wait
     [ -z "$nvme" ] && log_in ""
     [ "$fio_status" = 0 ] || return "$fio_status"
