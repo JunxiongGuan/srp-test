@@ -51,11 +51,17 @@ pre_check() {
 
 # Set up test configuration
 setup() {
+    local m
+
     /etc/init.d/srpd stop >/dev/null 2>&1
     if pidof srp_daemon >/dev/null; then
 	echo "Error: failed to stop srp_daemon"
 	return 1
     fi
+
+    for m in "${mountpoint[@]}"; do
+	unmount_and_check "$m" || return $?
+    done
 
     teardown || return $?
 
