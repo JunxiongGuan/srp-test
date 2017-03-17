@@ -133,6 +133,12 @@ srp_log_in() {
 	    done
 	done
     fi
+
+    for p in /sys/class/scsi_host/*/orig_dgid; do
+	[ -e "$p" ] && return 0
+    done
+
+    return 1
 }
 
 # Tell the SRP initiator driver to log out.
