@@ -90,9 +90,22 @@ get_ipv6_addr() {
 	sed -n 's/.*[[:blank:]]inet6[[:blank:]]*\([^[:blank:]/]*\).*/\1/p'
 }
 
+srp_single_login() {
+    local login=$1 p=$2 status
+
+    if ! status=$(LC_ALL=C; { echo "$login" >"$p"; } 2>&1); then
+	status="${status/*: }"
+	if [ "$status" != "File exists" ]; then
+	    echo "$login >$p/add_target failed: $status"
+	    return 1
+	fi
+    fi
+    return 0
+}
+
 # Make the SRP initiator driver log in to each SRP target port.
 srp_log_in() {
-    local add_param=$1 d dest gid ibdev ioc_guid port
+    local a add_param=$1 d dest gid ibdev ioc_guid login port p sysfsdir
 
     ioc_guid=$(</sys/module/ib_srpt/parameters/srpt_service_guid)
     for d in /sys/class/infiniband_mad/umad*; do
@@ -104,9 +117,7 @@ srp_log_in() {
 	gid=${gid//:}
 	for p in /sys/class/infiniband_srp/*; do
 	    [ -e "$p" ] || continue
-	    {
-		echo "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dgid=$gid,pkey=7fff,service_id=$ioc_guid,$add_param" >"$p/add_target"
-	    } 2>/dev/null
+	    srp_single_login "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dgid=$gid,pkey=7fff,service_id=$ioc_guid,$add_param" "$p/add_target"
 	done
     done
 
@@ -118,9 +129,7 @@ srp_log_in() {
 		a=$(get_ipv4_addr "$(basename "$d")")
 		[ -n "$a" ] || continue
 		dest="${a}:${srp_rdma_cm_port}"
-		{
-		    echo "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" >"$p/add_target"
-		} 2>/dev/null
+		srp_single_login "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" "$p/add_target"
 	    done
 	done
     fi
