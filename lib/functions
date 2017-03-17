@@ -277,8 +277,10 @@ dev_to_mpath() {
     for d in /dev/mapper/mpath*; do
 	if [ -h "$d" ]; then
 	    e=$(readlink -f "$d")
-	else
+	elif [ -e "$d" ]; then
 	    e="$d"
+	else
+	    continue
 	fi
 	if [ "$(stat -c %t:%T "$e")" = "$mm" ]; then
 	    basename "$d"
