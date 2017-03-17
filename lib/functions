@@ -44,7 +44,24 @@ usage() {
     exit 1
 }
 
+initialize_tracing() {
+    local basename=$1 args=$2
+
+    if [ -n "$trace" ]; then
+	rm -f "${basename}.log"
+	exec 1> >(while read -r line; do
+		      [ "${line#+}" = "${line}" ] && echo "${line}"
+                      echo "${line}" >> "${basename}.log"
+		  done)
+	exec 2>&1
+	echo "Command-line arguments: $args"
+	set -x
+    fi
+}
+
 parse_cmdline() {
+    local args="$*"
+
     while [ "${1#-}" != "$1" ]; do
 	case "${1#-}" in
 	    d) options+=($1);    debug=1;;
@@ -60,6 +77,8 @@ parse_cmdline() {
     done
 
     [ $# = 0 ] || usage "$(dirname "$0")"
+
+    initialize_tracing "$(basename "$0")" "$args"
 }
 
 use_blk_mq() {
