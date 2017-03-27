@@ -157,6 +157,8 @@ srp_log_in() {
 	[ -e "$p" ] && return 0
     done
 
+    echo "SRP login failed"
+
     return 1
 }
 
