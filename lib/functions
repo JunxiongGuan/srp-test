@@ -617,7 +617,7 @@ set_scheduler() {
 
 # Get a /dev/... path that points at dm device number $1 with $1 >= 0.
 get_bdev() {
-    local b dev realdev i=$1
+    local b d dev i=$1 realdev s
 
     is_number "$i" || return $?
     echo reconfigure | multipathd -k >&/dev/null
@@ -636,8 +636,12 @@ get_bdev() {
     fi
     realdev=$(readlink "$dev" 2>/dev/null || echo "?")
     echo "Using $dev -> ${realdev}" >&2
+    s=none
     b=$(basename "$realdev")
-    set_scheduler "$b" none
+    set_scheduler "$b" "$s"
+    for d in /sys/class/block/*/holders/$b; do
+	set_scheduler "$(basename "$(dirname "$(dirname "$d")")")" "$s"
+    done
     echo "$dev"
 }
 
