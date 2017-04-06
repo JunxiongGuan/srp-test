@@ -593,9 +593,31 @@ get_bdev_uid() {
     fi
 }
 
+# Set scheduler of $1 to $2
+set_scheduler() {
+    local b=$1 p s=$2
+
+    p=/sys/class/block/$b/queue/scheduler
+    if [ -e "/sys/block/$b/mq" ]; then
+	case "$s" in
+	    noop)        s=none;;
+	    deadline)    s=mq-deadline;;
+	esac
+    else
+	case "$s" in
+	    none)        s=noop;;
+	    mq-deadline) s=deadline;;
+	esac
+    fi
+    if ! echo "$s" > "$p"; then
+	echo "Changing scheduler of $b from $(<"$p") into $s failed" >&2
+	return 1
+    fi
+}
+
 # Get a /dev/... path that points at dm device number $1 with $1 >= 0.
 get_bdev() {
-    local b dev realdev p s i=$1
+    local b dev realdev i=$1
 
     is_number "$i" || return $?
     echo reconfigure | multipathd -k >&/dev/null
@@ -615,16 +637,7 @@ get_bdev() {
     realdev=$(readlink "$dev" 2>/dev/null || echo "?")
     echo "Using $dev -> ${realdev}" >&2
     b=$(basename "$realdev")
-    p=/sys/class/block/$b/queue/scheduler
-    if [ -e "/sys/block/$b/mq" ]; then
-	#s=mq-deadline
-	s=none
-    else
-	s=noop
-    fi
-    if ! echo "$s" > "$p"; then
-	echo "Changing scheduler of $b from $(<"$p") into $s failed" >&2
-    fi
+    set_scheduler "$b" none
     echo "$dev"
 }
 
