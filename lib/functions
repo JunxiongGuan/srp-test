@@ -643,6 +643,7 @@ get_bdev() {
     b=$(basename "$realdev")
     set_scheduler "$b" "${elevator}"
     for d in /sys/class/block/*/holders/$b; do
+	[ -e "$d" ] || continue
 	set_scheduler "$(basename "$(dirname "$(dirname "$d")")")" "${elevator}"
     done
     echo "$dev"
