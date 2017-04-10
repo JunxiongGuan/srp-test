@@ -31,6 +31,7 @@ else
 fi
 options=()
 debug=
+elevator=none
 filesystem_type=ext4
 target_framework=lio
 nvme_subsysnqn="nvme-test"
@@ -65,6 +66,7 @@ parse_cmdline() {
     while [ "${1#-}" != "$1" ]; do
 	case "${1#-}" in
 	    d) options+=($1);    debug=1;;
+	    e) options+=($1 $2); elevator=$2; shift;;
 	    f) options+=($1 $2); filesystem_type=$2; shift;;
 	    n) options+=($1);    nvme=1;;
 	    r) options+=($1 $2); runtime=$2; shift;;
@@ -602,11 +604,13 @@ set_scheduler() {
 	case "$s" in
 	    noop)        s=none;;
 	    deadline)    s=mq-deadline;;
+	    bfq)         s=bfq-mq;;
 	esac
     else
 	case "$s" in
 	    none)        s=noop;;
 	    mq-deadline) s=deadline;;
+	    bfq-mq)      s=bfq;;
 	esac
     fi
     if ! echo "$s" > "$p"; then
@@ -617,7 +621,7 @@ set_scheduler() {
 
 # Get a /dev/... path that points at dm device number $1 with $1 >= 0.
 get_bdev() {
-    local b d dev i=$1 realdev s
+    local b d dev i=$1 realdev
 
     is_number "$i" || return $?
     echo reconfigure | multipathd -k >&/dev/null
@@ -636,11 +640,10 @@ get_bdev() {
     fi
     realdev=$(readlink "$dev" 2>/dev/null || echo "?")
     echo "Using $dev -> ${realdev}" >&2
-    s=none
     b=$(basename "$realdev")
-    set_scheduler "$b" "$s"
+    set_scheduler "$b" "${elevator}"
     for d in /sys/class/block/*/holders/$b; do
-	set_scheduler "$(basename "$(dirname "$(dirname "$d")")")" "$s"
+	set_scheduler "$(basename "$(dirname "$(dirname "$d")")")" "${elevator}"
     done
     echo "$dev"
 }
