@@ -1053,7 +1053,7 @@ run_fio() {
 		    fi
 		}
 	 )
-	args+=(--size=$((a*1024/j - 16*1024)))
+	args+=("--size=$((a*1024/j - 16*1024))")
     fi
     for opt in --exitall_on_error=1 --gtod_reduce=1; do
 	if test_fio_opt "$opt"; then
