@@ -362,7 +362,8 @@ remove_mpath_dev() {
     local cmd dm i output
 
     dm=$(dev_to_mpath "$1") || return $?
-    dmsetup message "$dm" 0 fail_if_no_path
+    cmd="dmsetup message $dm 0 fail_if_no_path"
+    eval "$cmd" || echo "$cmd: failed"
     for ((i=10;i>0;i--)); do
 	if [ ! -e "/dev/mapper/$dm" ] ||
 	       cmd="dmsetup remove $dm"
