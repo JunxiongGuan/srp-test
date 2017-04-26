@@ -340,7 +340,10 @@ dev_to_mpath() {
     else
 	e="$1"
     fi
-    mm=$(stat -c %t:%T "$e") || return $?
+    if ! mm=$(stat -c %t:%T "$e"); then
+	echo "stat $1 -> $e failed"
+	return 1
+    fi
 
     for d in /dev/mapper/mpath*; do
 	if [ -h "$d" ]; then
