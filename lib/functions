@@ -364,10 +364,11 @@ dev_to_mpath() {
 remove_mpath_dev() {
     local cmd dm i output t1 t2
 
-    dm=$(dev_to_mpath "$1") || return $?
+    cmd="dm=\$(dev_to_mpath \"$1\")"
+    eval "$cmd" || { echo "$cmd: failed"; return 1; }
     t1=$(dmsetup table "$dm")
     cmd="dmsetup message $dm 0 fail_if_no_path"
-    eval "$cmd" || echo "$cmd: failed"
+    eval "$cmd" || { echo "$cmd: failed"; return 1; }
     t2=$(dmsetup table "$dm")
     if echo "$t2" | grep -qw queue_if_no_path; then
 	echo "$dm: $t1 -> $t2"
