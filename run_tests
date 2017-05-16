@@ -40,7 +40,11 @@ pre_check() {
 setup() {
     local m
 
-    /etc/init.d/srpd stop >/dev/null 2>&1
+    if [ -e /etc/init.d/srpd ]; then
+	/etc/init.d/srpd stop >/dev/null 2>&1
+    else
+	systemctl stop srp_daemon
+    fi
     if pidof srp_daemon >/dev/null; then
 	echo "Error: failed to stop srp_daemon"
 	return 1
