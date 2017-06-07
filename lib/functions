@@ -117,7 +117,7 @@ srp_single_login() {
     if ! status=$(LC_ALL=C; { echo "$login" >"$p"; } 2>&1); then
 	status="${status/*: }"
 	if [ "$status" != "File exists" ]; then
-	    echo "$login >$p/add_target failed: $status"
+	    echo "$login >$p failed: $status"
 	    return 1
 	fi
     fi
