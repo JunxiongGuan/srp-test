@@ -129,34 +129,38 @@ srp_log_in() {
     local a add_param=$1 d dest gid ibdev ioc_guid login port p sysfsdir
 
     ioc_guid=$(</sys/module/ib_srpt/parameters/srpt_service_guid)
-    for d in /sys/class/infiniband_mad/umad*; do
-	[ -e "$d" ] || continue
-	sysfsdir=/sys/class/infiniband_mad/$(basename "$d")
-	ibdev=$(<"$sysfsdir/ibdev")
-	port=$(<"$sysfsdir/port")
-	gid=$(<"/sys/class/infiniband/$ibdev/ports/$port/gids/0")
-	gid=${gid//:}
-	for p in /sys/class/infiniband_srp/*; do
-	    [ -e "$p" ] || continue
-	    srp_single_login "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dgid=$gid,pkey=7fff,service_id=$ioc_guid,$add_param" "$p/add_target"
-	done
-    done
 
-    if srp_initiator_supports_rdma_cm; then
-	for d in /sys/class/net/*; do
+    for ((i=0;i<10;i++)); do
+	for d in /sys/class/infiniband_mad/umad*; do
 	    [ -e "$d" ] || continue
+	    sysfsdir=/sys/class/infiniband_mad/$(basename "$d")
+	    ibdev=$(<"$sysfsdir/ibdev")
+	    port=$(<"$sysfsdir/port")
+	    gid=$(<"/sys/class/infiniband/$ibdev/ports/$port/gids/0")
+	    gid=${gid//:}
 	    for p in /sys/class/infiniband_srp/*; do
 		[ -e "$p" ] || continue
-		a=$(get_ipv4_addr "$(basename "$d")")
-		[ -n "$a" ] || continue
-		dest="${a}:${srp_rdma_cm_port}"
-		srp_single_login "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" "$p/add_target"
+		srp_single_login "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dgid=$gid,pkey=7fff,service_id=$ioc_guid,$add_param" "$p/add_target"
 	    done
 	done
-    fi
 
-    for p in /sys/class/scsi_host/*/orig_dgid; do
-	[ -e "$p" ] && return 0
+	if srp_initiator_supports_rdma_cm; then
+	    for d in /sys/class/net/*; do
+		[ -e "$d" ] || continue
+		for p in /sys/class/infiniband_srp/*; do
+		    [ -e "$p" ] || continue
+		    a=$(get_ipv4_addr "$(basename "$d")")
+		    [ -n "$a" ] || continue
+		    dest="${a}:${srp_rdma_cm_port}"
+		    srp_single_login "id_ext=$ioc_guid,ioc_guid=$ioc_guid,dest=$dest" "$p/add_target"
+		done
+	    done
+	fi
+
+	for p in /sys/class/scsi_host/*/orig_dgid; do
+	    [ -e "$p" ] && return 0
+	done
+	sleep .1
     done
 
     echo "SRP login failed"
