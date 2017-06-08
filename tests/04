@@ -31,6 +31,7 @@ test_low_sg_size() {
     run_fio --verify=md5 -rw=randwrite --bs=4M --loops=$((10**6)) \
 	--iodepth=4 --group_reporting --sync=1 --direct=1 --ioengine=libaio \
 	--filename="$dev" --name=low-sg-test --thread --numjobs=1 \
+	--size=${ramdisk_size} \
 	--runtime=10 --output=fio-output-04.txt >/dev/null
 }
 
