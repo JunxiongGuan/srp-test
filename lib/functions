@@ -631,7 +631,7 @@ set_scheduler() {
 	case "$s" in
 	    noop)        s=none;;
 	    deadline)    s=mq-deadline;;
-	    bfq)         s=bfq-mq;;
+	    bfq)         s=bfq;;
 	esac
     else
 	case "$s" in
